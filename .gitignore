@@ -1,0 +1,5 @@
+/target
+
+# Local runtime data, in case anyone runs with a portable data dir
+/chat-mod-data
+*.log
