@@ -27,12 +27,41 @@ Built in Rust with [egui](https://github.com/emilk/egui). Developed and tested o
 
 ## Getting started
 
+### 1. Install Rust (one time)
+
+1. Go to **[rustup.rs](https://rustup.rs)** and download `rustup-init.exe`.
+2. Run it, and press **Enter** to accept the defaults. If it offers to install the Visual Studio C++ build tools, say yes, because Rust needs them.
+3. Close and reopen any terminal windows when it's done.
+
+### 2. Download and build Chat Mod
+
+Open **PowerShell** or **Command Prompt** and run:
+
 ```bash
+git clone https://github.com/seaburn787-pixel/Chat-Mod.git
+cd Chat-Mod
 cargo build --release
-# -> target/release/chat-mod.exe   (no console window)
 ```
 
-Paste a channel, video or Twitch link into the top bar, click **Add**, then **Connect all**.
+No git? On this GitHub page, click **Code → Download ZIP**, unzip it, open a terminal in that folder, and run just `cargo build --release`.
+
+The first build downloads its libraries and takes a few minutes. Later builds are much faster.
+
+### 3. Run it
+
+Open `target\release\chat-mod.exe`. You can make a desktop shortcut to it.
+
+Paste a YouTube `@channel`, a video link or a `twitch.tv/name` link into the top bar, click **Add**, then **Connect all**.
+
+### Updating later
+
+```bash
+cd Chat-Mod
+git pull
+cargo build --release
+```
+
+Your settings and word lists aren't affected. They live in `%APPDATA%\chat-mod`, not in this folder.
 
 ## Word lists
 
