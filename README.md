@@ -27,7 +27,15 @@ Built in Rust with [egui](https://github.com/emilk/egui). Developed and tested o
   - On YouTube the ☰ menu offers the same moderation options the website shows you.
   - Messages deleted by anyone on the platform side are struck through in Chat Mod as well.
 
-## Getting started
+## Download
+
+Grab **`chat-mod.exe`** from the [latest release](https://github.com/seaburn787-pixel/Chat-Mod/releases/latest) and run it. Nothing to install.
+
+Windows may show a **"Windows protected your PC"** warning, because the exe isn't code-signed. Click **More info → Run anyway**.
+
+## Building from source
+
+Only needed if you want to change the code.
 
 ### 1. Install Rust (one time)
 
@@ -55,7 +63,7 @@ Open `target\release\chat-mod.exe`. You can make a desktop shortcut to it.
 
 Paste a YouTube `@channel`, a video link or a `twitch.tv/name` link into the top bar, click **Add**, then **Connect all**.
 
-### Updating later
+### Updating a source build
 
 ```bash
 cd Chat-Mod
@@ -133,6 +141,15 @@ cargo test
 cargo clippy --all-targets
 cargo fmt
 ```
+
+**Releasing:** bump `version` in `Cargo.toml`, commit, then push a tag:
+
+```bash
+git tag v0.2.0
+git push origin v0.2.0
+```
+
+GitHub Actions (`.github/workflows/release.yml`) runs the tests, builds the exe and publishes the release. The exe links the C runtime statically (`.cargo/config.toml`), so it runs on PCs without the Visual C++ redistributable.
 
 | Module | |
 |---|---|
