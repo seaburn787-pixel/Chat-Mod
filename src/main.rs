@@ -6,6 +6,7 @@ mod config;
 mod filter;
 mod model;
 mod moderation;
+mod repeats;
 mod sound;
 mod source;
 mod spelled;

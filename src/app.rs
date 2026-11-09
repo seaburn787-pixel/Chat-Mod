@@ -2,6 +2,7 @@ use crate::config::{Config, LIST_HEADER, Paths, SourceKind};
 use crate::filter::FilterSet;
 use crate::model::{ChatMsg, FlagHit, ModStatus, Part, SourceEvent};
 use crate::moderation::{self, ModEvent, TwitchAuth};
+use crate::repeats::RepeatTracker;
 use crate::sound;
 use crate::source::channel::ChannelStreams;
 use crate::source::{self, SourceHandle, StartParams};
@@ -183,6 +184,7 @@ pub struct ModApp {
     show_reviewed: bool,
     last_sound: Option<Instant>,
     spell: SpellTracker,
+    repeats: RepeatTracker,
     /// (stream, author id, name) already checked, so a name flags once per
     /// person and again only if they rename.
     names_checked: HashSet<(u64, String, String)>,
@@ -271,6 +273,7 @@ impl ModApp {
             show_reviewed: false,
             last_sound: None,
             spell: SpellTracker::default(),
+            repeats: RepeatTracker::default(),
             names_checked: HashSet::new(),
             flagged_names: HashSet::new(),
             name_test: String::new(),
@@ -559,6 +562,7 @@ impl ModApp {
             if self.cfg.catch_spelled {
                 spelled = self.check_spelled(&mut m);
             }
+            self.check_repeats(&mut m);
             name_hits = self.check_author_name(&mut m);
         }
         if m.is_flagged() {
@@ -601,6 +605,42 @@ impl ModApp {
         }
         m.hits.extend(hit.hits);
         Some(hit.combined)
+    }
+
+    /// Same message over and over from one person, or from many people at
+    /// once. Every copy that counted is marked, not just the newest.
+    fn check_repeats(&mut self, m: &mut ChatMsg) {
+        let settings = self.cfg.repeat_settings();
+        if settings == Default::default() {
+            return;
+        }
+        // Compare the words only: emote-only and emote-heavy spam is left alone.
+        let words: String = m
+            .parts
+            .iter()
+            .map(|p| match p {
+                Part::Text(t) => t.as_str(),
+                Part::Emote { .. } => " ",
+            })
+            .collect();
+        let who = if m.channel_id.is_empty() {
+            &m.author
+        } else {
+            &m.channel_id
+        };
+        let found = self
+            .repeats
+            .push(&settings, m.source, who, &m.id, &words, Instant::now());
+        for hit in found {
+            for earlier in self
+                .chat
+                .iter_mut()
+                .filter(|c| c.source == m.source && hit.ids.contains(&c.id))
+            {
+                earlier.hits.push(hit.hit.clone());
+            }
+            m.hits.push(hit.hit);
+        }
     }
 
     /// Looks for list words inside the author's name, once per name. Returns
@@ -2058,6 +2098,54 @@ impl ModApp {
                             crate::spelled::MAX_FRAGMENT_LETTERS,
                             crate::spelled::SPELL_WINDOW.as_secs()
                         ));
+                        ui.end_row();
+
+                        ui.label("Repeated messages");
+                        ui.horizontal(|ui| {
+                            ui.checkbox(&mut self.cfg.catch_repeats, "Same person")
+                                .on_hover_text(format!(
+                                    "Flags someone sending the same message over and over, \
+                                     even with different caps, punctuation or stretched letters. \
+                                     Messages under {} letters (lol, gg) are ignored.",
+                                    crate::repeats::MIN_LETTERS
+                                ));
+                            ui.add_enabled(
+                                self.cfg.catch_repeats,
+                                egui::DragValue::new(&mut self.cfg.repeat_count)
+                                    .range(2..=20)
+                                    .suffix("×"),
+                            );
+                            ui.label("in");
+                            ui.add_enabled(
+                                self.cfg.catch_repeats,
+                                egui::DragValue::new(&mut self.cfg.repeat_window_secs)
+                                    .range(5..=600)
+                                    .suffix(" s"),
+                            );
+                        });
+                        ui.end_row();
+
+                        ui.label("Copy-paste raids");
+                        ui.horizontal(|ui| {
+                            ui.checkbox(&mut self.cfg.catch_raids, "Many people")
+                                .on_hover_text(
+                                    "Flags lots of different people posting the same message \
+                                     at once, the usual pattern of spam bots.",
+                                );
+                            ui.add_enabled(
+                                self.cfg.catch_raids,
+                                egui::DragValue::new(&mut self.cfg.raid_count)
+                                    .range(2..=50)
+                                    .suffix(" people"),
+                            );
+                            ui.label("in");
+                            ui.add_enabled(
+                                self.cfg.catch_raids,
+                                egui::DragValue::new(&mut self.cfg.raid_window_secs)
+                                    .range(5..=600)
+                                    .suffix(" s"),
+                            );
+                        });
                         ui.end_row();
 
                         ui.label("Exemptions");

@@ -20,6 +20,8 @@ Built in Rust with [egui](https://github.com/emilk/egui). Developed and tested o
   - Matching messages turn red, go into a **Flagged** panel, and play a sound.
   - Plain rules see through common evasion: `sc4m`, `$c@m`, `s c a m`, `s.c.a.m`, `scaaam`, accented and Cyrillic/Greek lookalike letters, and fullwidth or math-styled Unicode.
   - **Spelled-out words** are caught even when someone types one or two letters per message (`x` / `y` / `z`).
+  - **Repeated messages:** one person sending the same message over and over ("am i banned yet" ×3) is flagged, even with different caps, punctuation or stretched letters.
+  - **Copy-paste raids:** many different people posting the same message at once is flagged too. Both have their own on/off switch and limits in Settings.
   - **Usernames** can be checked too, so a list word hidden anywhere in a name gets flagged. There's an allow list for innocent names, e.g. "Cassandra".
 - **Moderation.** 🗑 delete, ⏱ timeout and 🔨 ban appear on every message and in the Flagged panel.
   - On YouTube the ☰ menu offers the same moderation options the website shows you.
@@ -137,6 +139,7 @@ cargo fmt
 | `app.rs` | UI, moderation dialogs |
 | `filter.rs` | Word-list rules and evasion folding |
 | `spelled.rs` | Words spelled across messages |
+| `repeats.rs` | Repeated messages and copy-paste raids |
 | `source.rs`, `source/` | YouTube (InnerTube + API), Twitch IRC, channel stream discovery |
 | `moderation.rs` | Twitch login (device flow) and Helix delete/ban |
 | `yt_mod.rs` | YouTube ☰-menu actions |

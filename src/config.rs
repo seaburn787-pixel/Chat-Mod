@@ -34,6 +34,16 @@ pub struct Config {
     pub ignore_mods: bool,
     /// Flag words spelled out a letter or two per message.
     pub catch_spelled: bool,
+    /// Flag one person sending the same message `repeat_count` times within
+    /// `repeat_window_secs`.
+    pub catch_repeats: bool,
+    pub repeat_count: usize,
+    pub repeat_window_secs: u64,
+    /// Flag `raid_count` different people sending the same message within
+    /// `raid_window_secs` (copy-paste raids).
+    pub catch_raids: bool,
+    pub raid_count: usize,
+    pub raid_window_secs: u64,
     pub max_messages: usize,
     pub disabled_lists: Vec<String>,
     /// From dev.twitch.tv; identifies this app when logging in to moderate.
@@ -45,6 +55,23 @@ pub struct Config {
     /// Lists whose words are also looked for inside usernames.
     pub name_check_lists: Vec<String>,
     pub log_flagged: bool,
+}
+
+impl Config {
+    pub fn repeat_settings(&self) -> crate::repeats::Settings {
+        use crate::repeats::Rule;
+        use std::time::Duration;
+        crate::repeats::Settings {
+            repeats: self.catch_repeats.then(|| Rule {
+                count: self.repeat_count.clamp(2, 20),
+                window: Duration::from_secs(self.repeat_window_secs.clamp(5, 600)),
+            }),
+            raids: self.catch_raids.then(|| Rule {
+                count: self.raid_count.clamp(2, 50),
+                window: Duration::from_secs(self.raid_window_secs.clamp(5, 600)),
+            }),
+        }
+    }
 }
 
 impl Default for Config {
@@ -62,6 +89,12 @@ impl Default for Config {
             sound_file: String::new(),
             ignore_mods: true,
             catch_spelled: true,
+            catch_repeats: true,
+            repeat_count: 3,
+            repeat_window_secs: 60,
+            catch_raids: true,
+            raid_count: 4,
+            raid_window_secs: 30,
             max_messages: 1500,
             disabled_lists: Vec::new(),
             twitch_client_id: String::new(),
